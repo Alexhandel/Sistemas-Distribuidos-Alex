@@ -6,7 +6,7 @@ import select
 import sys
 
 HOST = 'localhost'
-PORTA = 6001
+PORTA = 6003
 
 def main():
 	#inicializa o socket
@@ -17,7 +17,7 @@ def main():
 		sock.send(str.encode(msg))
 		msg=sock.recv(2048)
 		msgRecebida = str(msg, encoding='utf-8')
-		print("msgRecebida")
+		print(msgRecebida)
 	sock.close() 
 
 main()

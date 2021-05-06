@@ -6,7 +6,7 @@ import select
 import sys
 
 HOST = ''
-PORTA = 6001
+PORTA = 6003
 
 #lista de I/O
 entradas = [sys.stdin]
@@ -50,7 +50,7 @@ def aceitaConexao(socket):
 	usernames[clienteSocket] = " "
 
 
-	return clienteSocket, endr
+	return clienteSocket, endereco
 
 def atendeRequisicoes(clienteSocket, endr):
 	'''Recebe mensagens e as envia de volta para o cliente (ate o cliente finalizar)
@@ -58,6 +58,7 @@ def atendeRequisicoes(clienteSocket, endr):
 	Saida: '''
 
 	#recebe dados do cliente
+	print("atendendendo requisisson")
 	data = clienteSocket.recv(2048) 
 	if not data: # dados vazios: cliente encerrou
 		print(str(endr) + '-> encerrou')
@@ -76,11 +77,14 @@ def atendeRequisicoes(clienteSocket, endr):
 	if estadoClientes[clienteSocket]=="menu":
 		usernames[clienteSocket] = data.decode("utf-8")
 		estadoClientes[clienteSocket] = "notMenu"
+		clienteSocket.send(str.encode("nome mudado"))
 		pass
 	else:
+		listaPalavras = []
+		print("requisição para" + str(usernames[clienteSocket]))
 		for name in usernames:
-			print(name)
-			clienteSocket.send(str.encode("ta printado"))
+			listaPalavras.append(usernames[name])
+		clienteSocket.send(str.encode(str(listaPalavras)))
 
 def main():
 	socket=iniciaServidor()
@@ -91,7 +95,7 @@ def main():
 		#tratar todas as entradas prontas
 		for pronto in leitura:
 			if pronto == socket:  #pedido novo de conexao
-				clienteSock, endr = aceitaConexao(socket)
+				clienteSocket, endr = aceitaConexao(socket)
 				print ('Conectado com: ', endr)
 				# configura o socket para o modo nao-bloqueante
 				clienteSocket.setblocking(False)
@@ -104,6 +108,10 @@ def main():
 						socket.close()
 						sys.exit()
 					else: print("ha conexoes ativas")
+				elif cmd == "lista":
+					print("usuarios: ")
+					for name in usernames:
+						print(usernames[name])
 			else: #nova requisicao de cliente
 				atendeRequisicoes(pronto, conexoes[pronto])
 
