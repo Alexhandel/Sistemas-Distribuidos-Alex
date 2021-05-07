@@ -1,6 +1,6 @@
 #servidor de echo: lado servidor
 #com finalizacao do lado do servidor
-#com multithreading (usa join para esperar as threads terminarem apos digitar 'fim' no servidor)
+#com multithreading
 import socket
 import select
 import sys
@@ -8,12 +8,14 @@ import threading
 
 # define a localizacao do servidor
 HOST = '' # vazio indica que podera receber requisicoes a partir de qq interface de rede da maquina
-PORT = 10001 # porta de acesso
+PORT = 6004 # porta de acesso
 
 #define a lista de I/O de interesse (jah inclui a entrada padrao)
 entradas = [sys.stdin]
-#armazena historico de conexoes 
+#armazena as conexoes ativas
 conexoes = {}
+#lock para acesso do dicionario 'conexoes'
+lock = threading.Lock()
 
 def iniciaServidor():
 	'''Cria um socket de servidor e o coloca em modo de espera por conexoes
@@ -44,7 +46,9 @@ def aceitaConexao(sock):
 	clisock, endr = sock.accept()
 
 	# registra a nova conexao
+	lock.acquire()
 	conexoes[clisock] = endr 
+	lock.release()
 
 	return clisock, endr
 
@@ -58,6 +62,9 @@ def atendeRequisicoes(clisock, endr):
 		data = clisock.recv(1024) 
 		if not data: # dados vazios: cliente encerrou
 			print(str(endr) + '-> encerrou')
+			lock.acquire()
+			del conexoes[clisock] #retira o cliente da lista de conexoes ativas
+			lock.release()
 			clisock.close() # encerra a conexao com o cliente
 			return 
 		print(str(endr) + ': ' + str(data, encoding='utf-8'))
@@ -65,7 +72,6 @@ def atendeRequisicoes(clisock, endr):
 
 def main():
 	'''Inicializa e implementa o loop principal (infinito) do servidor'''
-	clientes=[] #armazena as threads criadas para fazer join
 	sock = iniciaServidor()
 	print("Pronto para receber conexoes...")
 	while True:
@@ -79,14 +85,13 @@ def main():
 				#cria nova thread para atender o cliente
 				cliente = threading.Thread(target=atendeRequisicoes, args=(clisock,endr))
 				cliente.start()
-				clientes.append(cliente) #armazena a referencia da thread para usar com join()
 			elif pronto == sys.stdin: #entrada padrao
 				cmd = input()
 				if cmd == 'fim': #solicitacao de finalizacao do servidor
-					for c in clientes: #aguarda todas as threads terminarem
-						c.join()
-					sock.close()
-					sys.exit()
+					if not conexoes: #somente termina quando nao houver clientes ativos
+						sock.close()
+						sys.exit()
+					else: print("ha conexoes ativas")
 				elif cmd == 'hist': #outro exemplo de comando para o servidor
 					print(str(conexoes.values()))
 
