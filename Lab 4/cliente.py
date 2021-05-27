@@ -5,7 +5,7 @@ import socket
 import threading
 
 HOST = 'localhost'
-PORTA = 6004
+PORTA = 7004
 
 def recebeMensagem(mySocket):
 	while True:

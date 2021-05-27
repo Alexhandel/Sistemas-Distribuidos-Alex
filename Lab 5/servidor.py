@@ -5,6 +5,7 @@ import socket
 import select
 import sys
 import threading
+import random
 
 HOST = ''
 PORTA = 7004
@@ -57,7 +58,8 @@ def iniciaNodes(n):
 def nodeBehavior(nodeSocket):
 	nodeIP=nodeSocket.getsockname()[0]
 	nodePort=nodeSocket.getsockname()[1]
-	print(nodeIP,nodePort)
+	print(nodeSocket.getsockname())
+	nodeID = hash(nodeSocket.getsockname())
 	while True:
 		clienteSocket, endereco = nodeSocket.accept()
 		print(clienteSocket.getsockname())
